@@ -1473,7 +1473,7 @@ Yêu cầu định dạng JSON chính xác tuyệt đối sau:
       if (tableStored) {
         const parsedData = LsrParser.parseLsrString(tableStored);
         if (Object.keys(parsedData).length > 0) {
-          computedNewLsr = parsedData;
+          computedNewLsr = LsrParser.mergeLsrData(baseLsrData, parsedData);
         }
       } else {
         const tableEdit = extractTagContent(newText, "tableEdit");

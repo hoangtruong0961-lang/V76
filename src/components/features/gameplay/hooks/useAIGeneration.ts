@@ -274,7 +274,7 @@ export function useAIGeneration({
       if (tableStored) {
         const parsedData = LsrParser.parseLsrString(tableStored);
         if (Object.keys(parsedData).length > 0) {
-          nextLsrData = parsedData;
+          nextLsrData = LsrParser.mergeLsrData(baseLsrData, parsedData);
         }
       } else {
         const tableEdit = extractTagContent(responseText, "tableEdit");
@@ -314,7 +314,7 @@ export function useAIGeneration({
         if (sTableStored) {
           const parsedData = LsrParser.parseLsrString(sTableStored);
           if (Object.keys(parsedData).length > 0) {
-            sLsr = parsedData;
+            sLsr = LsrParser.mergeLsrData(baseLsrData, parsedData);
           }
         } else {
           const sTableEdit = extractTagContent(swipeText, "tableEdit");
@@ -789,7 +789,7 @@ export function useAIGeneration({
       if (tableStored) {
         const parsedData = LsrParser.parseLsrString(tableStored);
         if (Object.keys(parsedData).length > 0) {
-          nextLsrData = parsedData;
+          nextLsrData = LsrParser.mergeLsrData(baseLsrData, parsedData);
         }
       } else {
         const tableEdit = extractTagContent(newText, "tableEdit");

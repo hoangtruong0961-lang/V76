@@ -1179,7 +1179,6 @@ You MUST adhere to the following technical formatting rules for the content log:
 6. **Response Structure (MANDATORY)**:
    - Wrap the entire story development in <content></content> tags.
    - The <content> tag MUST contain the entire narrative/story response for the current turn.
-   - The <table_stored> or <tableEdit> tag MUST be AFTER the </content> tag and BEFORE the <branches> tag.
    - The <time_cost> and <set_time> tags MUST be after the </content> tag, before the <branches> tag.
    - The <branches> tag MUST be the final content of the entire response and MUST ONLY contain action choices.
    - **CRITICAL**: NEVER put story narrative, descriptions, dialogue, or LSR DATA (like #0 Thông tin Hiện tại|0:...) inside the <branches> tag.

@@ -1160,10 +1160,9 @@ ${tableDefinitionsStr}
 
 Rules for updates:
 - action: "add" if a record does not exist in the table.
-- action: "update" if updating an existing record (matching on rowKey = column index 0). Let's overwrite specific columnValues to reflect state changes.
+- action: "update" if updating an existing record (matching on column index 0).
 - action: "delete" if removing a record (e.g. character dies, item is fully consumed/destroyed/lost, buff expired).
-- rowKey: The primary value for Column 0 (e.g. Item Name, Character Name, or Location).
-- columnValues: An array of STRING values matching columns starting from Index 1. DO NOT include Column 0 (which is rowKey) in columnValues. Ensure EVERY column from index 1 to the end has a value.
+- rowData: An array of STRING values representing the NEW state of the row. This array MUST EXACTLY match the number of columns in the schema array for that table, corresponding 1-to-1 with the column names. For example, if a table has 3 columns: ["Name", "Value", "Desc"], this array MUST have exactly 3 string values (e.g. ["HP", "100", "Health points"]). The first element (index 0) is always the primary identifying name/key. DO NOT output the header names themselves as a row.
 
 Be extremely accurate. ONLY output updates when there is a true change/consequence. If no changes are needed, return an empty updates list.`;
 
@@ -1184,14 +1183,13 @@ Be extremely accurate. ONLY output updates when there is a true change/consequen
                   properties: {
                     tableId: { type: Type.STRING, description: "ID of the table to update (from '0' to '15')" },
                     action: { type: Type.STRING, description: "Operation: 'add', 'update', or 'delete'" },
-                    rowKey: { type: Type.STRING, description: "The value of column index 0 (Primary Key)" },
-                    columnValues: {
+                    rowData: {
                       type: Type.ARRAY,
                       items: { type: Type.STRING },
-                      description: "Values of columns starting from index 1. Do not include column 0."
+                      description: "Values for EVERY column in the exact order as defined by the table schema. The first element (rowData[0]) acts as the rowKey."
                     }
                   },
-                  required: ["tableId", "action", "rowKey"]
+                  required: ["tableId", "action", "rowData"]
                 }
               }
             },
@@ -1216,8 +1214,11 @@ Be extremely accurate. ONLY output updates when there is a true change/consequen
 
       // Apply updates
       updates.forEach((u: any) => {
-        const { tableId, action, rowKey, columnValues = [] } = u;
-        if (!tableId) return;
+        const { tableId, action, rowData = [] } = u;
+        if (!tableId || rowData.length === 0) return;
+
+        const rowKey = rowData[0];
+        if (!rowKey) return;
 
         if (!nextLsrData[tableId]) {
           nextLsrData[tableId] = [];
@@ -1237,10 +1238,10 @@ Be extremely accurate. ONLY output updates when there is a true change/consequen
               toast(`🗑️ Đã xóa khỏi ${tableName}`, { description: rowKey });
             }).catch(() => {});
           }
-        } else if (action === "update") {
-          const newRowObj: Record<string, string> = { "0": rowKey };
-          columnValues.forEach((val: string, idx: number) => {
-            newRowObj[(idx + 1).toString()] = val;
+        } else if (action === "update" || action === "add") {
+          const newRowObj: Record<string, string> = {};
+          rowData.forEach((val: string, idx: number) => {
+            newRowObj[idx.toString()] = val;
           });
 
           if (existingIdx !== -1) {
@@ -1250,26 +1251,9 @@ Be extremely accurate. ONLY output updates when there is a true change/consequen
             };
             import('sonner').then(({ toast }) => {
               toast.dismiss();
-              toast(`🔄 Cập nhật ${tableName}`, { description: `${rowKey} (${columnValues[0] || ""})` });
+              const displayVal = rowData.length > 1 ? rowData[1] : "";
+              toast(action === "update" ? `🔄 Cập nhật ${tableName}` : `📦 Mới trong ${tableName}`, { description: `${rowKey} ${displayVal ? '(' + displayVal + ')' : ''}` });
             }).catch(() => {});
-          } else {
-            nextLsrData[tableId].push(newRowObj);
-            import('sonner').then(({ toast }) => {
-              toast.dismiss();
-              toast(`📦 Mới trong ${tableName}`, { description: rowKey });
-            }).catch(() => {});
-          }
-        } else if (action === "add") {
-          const newRowObj: Record<string, string> = { "0": rowKey };
-          columnValues.forEach((val: string, idx: number) => {
-            newRowObj[(idx + 1).toString()] = val;
-          });
-
-          if (existingIdx !== -1) {
-            nextLsrData[tableId][existingIdx] = {
-              ...nextLsrData[tableId][existingIdx],
-              ...newRowObj
-            };
           } else {
             nextLsrData[tableId].push(newRowObj);
             import('sonner').then(({ toast }) => {

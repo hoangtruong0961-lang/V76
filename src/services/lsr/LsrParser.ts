@@ -209,7 +209,7 @@ export const LsrParser = {
             });
 
             // If we have a reasonable key overlap match, map row data
-            if (bestScore > 1.5) {
+            if (bestScore >= 1.5) {
                 const matchedDef = tableDefs.find(t => t.id === bestTableId);
                 const matchedCols = matchedDef ? matchedDef.columns : [];
 
@@ -240,30 +240,8 @@ export const LsrParser = {
                     }
                 }
             } else {
-                // If headers do not overlap clearly, default guess by column count
-                let guessedTableId = "0"; // Default to "Thông tin Hiện tại" (4 columns)
-                if (headers.length === 3) guessedTableId = "2"; // Default 3-column table: "Trạng thái Bản thân"
-                else if (headers.length === 4) guessedTableId = "0";
-
-                const matchedDef = tableDefs.find(t => t.id === guessedTableId);
-                const matchedColCount = matchedDef ? matchedDef.columns.length : headers.length;
-
-                for (let i = startIndex; i < block.length; i++) {
-                    const rowLine = block[i];
-                    const cells = rowLine.split('|').slice(1, -1).map(c => c.trim());
-                    if (cells.length === 0) continue;
-
-                    const rowObj: Record<string, string> = {};
-                    cells.forEach((cellVal, cellIdx) => {
-                        if (cellIdx < matchedColCount) {
-                            rowObj[cellIdx.toString()] = cellVal;
-                        }
-                    });
-
-                    if (Object.keys(rowObj).length > 0) {
-                        addRowToResult(guessedTableId, rowObj);
-                    }
-                }
+                // Ignore random AI markup tables with low match scores to prevent database corruption.
+                console.log("[LsrParser] Ignored unrecognized markdown table with headers:", headers);
             }
         });
 

@@ -1095,7 +1095,7 @@ export const gameplayAiService = {
         errorMessage.includes("404") ||
         errorMessage.toLowerCase().includes("not found")
       ) {
-        userFriendlyMessage = `[LỖI MODEL (404): Không tìm thấy Model AI yêu cầu. Vui lòng kiểm tra lại tên Model trong phần Cài đặt AI & Proxy. Nếu dùng Proxy, hãy thử 'Tải danh sách Model' lại.]`;
+        userFriendlyMessage = `[LỖI MODEL (404): Không tìm thấy Model AI. Model: ${settings.aiModel}. Nếu dùng Proxy, hãy kiểm tra danh sách Model hỗ trợ của nhà cung cấp.]`;
       }
 
       return {
@@ -1978,7 +1978,7 @@ Be extremely accurate. ONLY output updates when there is a true change/consequen
         errorMessage.includes("404") ||
         errorMessage.toLowerCase().includes("not found")
       ) {
-        yield `<span style="color: #ef4444;">[LỖI MODEL (404): Không tìm thấy Model AI. Vui lòng kiểm tra lại Cài đặt AI & Proxy.]</span>`;
+        yield `<span style="color: #ef4444;">[LỖI MODEL (404): Không tìm thấy Model AI. Model: ${settings.aiModel}. Nếu dùng Proxy, hãy kiểm tra danh sách Model hỗ trợ của nhà cung cấp.]</span>`;
       } else if (
         errorMessage.toLowerCase().includes("safety") ||
         errorMessage.toLowerCase().includes("blocked")

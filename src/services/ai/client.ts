@@ -342,6 +342,15 @@ export const getAiClient = (settings?: AppSettings, forceDirect: boolean = false
             headers['X-Title'] = 'Tawa SillyTavern';
           }
 
+          let proxyChatUrl = baseUrl;
+          if (!proxyChatUrl.endsWith('/chat/completions')) {
+             if (proxyChatUrl.includes('/v1') || proxyChatUrl.includes('/api/v1')) {
+                proxyChatUrl = proxyChatUrl.endsWith('/') ? `${proxyChatUrl}chat/completions` : `${proxyChatUrl}/chat/completions`;
+             } else {
+                proxyChatUrl = proxyChatUrl.endsWith('/') ? `${proxyChatUrl}v1/chat/completions` : `${proxyChatUrl}/v1/chat/completions`;
+             }
+          }
+
           const response = await fetch('/api/ai/proxy', {
             method: 'POST',
             headers: {
@@ -349,7 +358,7 @@ export const getAiClient = (settings?: AppSettings, forceDirect: boolean = false
               'x-ark-client': 'ark-v2-client'
             },
             body: JSON.stringify({
-              url: `${baseUrl}/chat/completions`,
+              url: proxyChatUrl,
               method: 'POST',
               headers: headers,
               body: body
@@ -508,6 +517,15 @@ export const getAiClient = (settings?: AppSettings, forceDirect: boolean = false
             headers['X-Title'] = 'Tawa SillyTavern';
           }
 
+          let proxyChatUrl = baseUrl;
+          if (!proxyChatUrl.endsWith('/chat/completions')) {
+             if (proxyChatUrl.includes('/v1') || proxyChatUrl.includes('/api/v1')) {
+                proxyChatUrl = proxyChatUrl.endsWith('/') ? `${proxyChatUrl}chat/completions` : `${proxyChatUrl}/chat/completions`;
+             } else {
+                proxyChatUrl = proxyChatUrl.endsWith('/') ? `${proxyChatUrl}v1/chat/completions` : `${proxyChatUrl}/v1/chat/completions`;
+             }
+          }
+
           const response = await fetch('/api/ai/proxy', {
             method: 'POST',
             headers: {
@@ -515,7 +533,7 @@ export const getAiClient = (settings?: AppSettings, forceDirect: boolean = false
               'x-ark-client': 'ark-v2-client'
             },
             body: JSON.stringify({
-              url: `${baseUrl}/chat/completions`,
+              url: proxyChatUrl,
               method: 'POST',
               headers: headers,
               body: body

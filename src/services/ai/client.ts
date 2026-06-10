@@ -240,9 +240,7 @@ export const getAiClient = (settings?: AppSettings, forceDirect: boolean = false
   const isOpenAIModel = modelToTest.includes('gpt') || modelToTest.includes('claude') || modelToTest.includes('kimi') || modelToTest.includes('moonshot') || modelToTest.includes('deepseek') || modelToTest.includes('qwen') || modelToTest.includes('grok');
   const isOpenAILikeProxy = !!(
     activeProxy?.url?.includes('api.openai.com') ||
-    activeProxy?.url?.includes('chat/completions') ||
-    activeProxy?.url?.includes('ggchan.dev') ||
-    activeProxy?.url?.includes('openrouter.ai')
+    activeProxy?.url?.includes('chat/completions')
   );
   
   const effectiveType = (useProxy && activeProxy) 

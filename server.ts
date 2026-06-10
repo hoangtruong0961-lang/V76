@@ -6,6 +6,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { GoogleGenAI } from "@google/genai";
 import crypto from "crypto";
+import { Transform } from "stream";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -223,7 +224,40 @@ async function startServer() {
       res.status(response.status);
 
       if (isStream) {
-        response.data.pipe(res);
+        let buffer = '';
+        const filterDoneTransform = new Transform({
+          transform(chunk, encoding, callback) {
+            buffer += chunk.toString('utf-8');
+            
+            // Process buffer line by line to safely catch data: [DONE]
+            let lines = buffer.split('\n');
+            // Keep the last incomplete line in the buffer
+            buffer = lines.pop() || '';
+            
+            let filteredChunk = '';
+            for (const line of lines) {
+               if (line.includes('[DONE]') || line.trim() === 'data: [DONE]') {
+                  // Skip this line to prevent JSON parsing errors in target SDKs
+                  continue; 
+               }
+               filteredChunk += line + '\n';
+            }
+            
+            if (filteredChunk) {
+               this.push(Buffer.from(filteredChunk, 'utf-8'));
+            }
+            callback();
+          },
+          flush(callback) {
+             if (buffer) {
+                if (!buffer.includes('[DONE]') && buffer.trim() !== 'data: [DONE]') {
+                   this.push(Buffer.from(buffer, 'utf-8'));
+                }
+             }
+             callback();
+          }
+        });
+        response.data.pipe(filterDoneTransform).pipe(res);
       } else {
         res.json(response.data);
       }

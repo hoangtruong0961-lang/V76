@@ -12,7 +12,8 @@ async function getLocalTransformerEmbedding(text: string): Promise<number[] | nu
         if (!pipelineInstance && !isLoadingPipeline) {
             isLoadingPipeline = true;
             console.log("[LocalEmbedding] Loading Xenova feature-extraction pipeline...");
-            const { pipeline } = await import("@xenova/transformers");
+            const { pipeline, env } = await import("@xenova/transformers");
+            env.allowLocalModels = false;
             pipelineInstance = await pipeline("feature-extraction", "Xenova/all-MiniLM-L6-v2");
             console.log("[LocalEmbedding] Xenova pipeline loaded successfully.");
             isLoadingPipeline = false;
@@ -34,8 +35,8 @@ async function getLocalTransformerEmbedding(text: string): Promise<number[] | nu
             }
             return values;
         }
-    } catch (err) {
-        console.warn("[LocalEmbedding] Failed to generate Xenova transformer embedding:", err);
+    } catch (err: any) {
+        console.warn("[LocalEmbedding] Failed to generate Xenova transformer embedding:", err?.message || String(err), err);
         isLoadingPipeline = false;
     }
     return null;

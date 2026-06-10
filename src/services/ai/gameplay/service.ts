@@ -564,7 +564,7 @@ export const gameplayAiService = {
       const maxHistoryCount = worldData.config.contextConfig?.recentHistoryCount || MAX_HISTORY_CONTEXT;
       finalHistoryStartIndex = Math.max(finalHistoryStartIndex, history.length - maxHistoryCount);
 
-      const slicedHistory = history.slice(finalHistoryStartIndex);
+      const slicedHistory = history.slice(finalHistoryStartIndex).filter(m => !m.isHidden);
 
       // --- DYNAMIC AI COMPRESSION ---
       let contextualSummary = undefined;

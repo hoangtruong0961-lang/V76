@@ -37,7 +37,8 @@ const REINFORCEMENT_PROMPTS = [
   "STRUCTURE CHECK: <branches> MUST ONLY contain action choices. Any story text found inside <branches> is a CRITICAL FAILURE. Ensure the first choice is a valid action, not a continuation of the story.",
   "TAG INTEGRITY: Ensure all XML tags (<thinking>, <content>, <branches>, <tableEdit>) are correctly opened and closed. Do not nest <content> inside other tags. Every response MUST contain exactly one <content> tag.",
   "ULTIMATE RULE: All narrative story text MUST be inside the <content> tag. Never output narrative text outside of <content>. If you fail to include <content>, the system will reject your response.",
-  "KNOWLEDGE LOGIC DISCIPLINE (CRITICAL): Strictly respect setting rules, limits, prerequisite costs, and power laws in the retrieved Tri Thức (RAG/Trained Knowledge). If resources (e.g., spiritual energy/mana/stamina) are depleted, write logical struggle/failure instead of magic cheats or bypasses."
+  "KNOWLEDGE LOGIC DISCIPLINE (CRITICAL): Strictly respect setting rules, limits, prerequisite costs, and power laws in the retrieved Tri Thức (RAG/Trained Knowledge). If resources (e.g., spiritual energy/mana/stamina) are depleted, write logical struggle/failure instead of magic cheats or bypasses.",
+  "LSR STATUS TRACKING (MANDATORY RULE): You MUST update <tableEdit> with realistic Point/Status modifications under Table #2 (Máu/Năng lượng/Health) and Table #3 (Quan hệ/Relationship Meters) ngầm after player's action instead of purely outputting descriptive text. Represent stats creatively (e.g. '80/100', 'Suy yếu', 'Kẻ thù').",
 ];
 
 const INITIAL_REINFORCEMENT_PROMPTS = [

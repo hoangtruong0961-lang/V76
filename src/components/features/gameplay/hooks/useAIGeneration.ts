@@ -4,6 +4,7 @@ import { gameplayAiService } from "../../../../services/ai/gameplay/service";
 import { storyBibleService } from "../../../../services/ai/storyBibleService";
 import { dbService } from "../../../../services/db/indexedDB";
 import { Mem0Service } from "../../../../services/ai/memory/Mem0Service";
+import { DynamicMemoryService } from "../../../../services/ai/memory/DynamicMemoryService";
 import { vectorService } from "../../../../services/ai/vectorService";
 import { LsrParser } from "../../../../services/lsr/LsrParser";
 import { getRegexedString, extractTagContent, parseChoices, ensureThinkingTagsBalanced, extractThinkingAndContent, isCotModule } from "../../../../utils/regex";
@@ -434,6 +435,47 @@ export function useAIGeneration({
           ).catch((mErr) => {
             console.error("[Mem0] Background updater failed:", mErr);
           });
+
+          // BACKGROUND AUTO-SUMMARIZATION LOGIC (Token Conservation)
+          // Hide old messages if the visible text length is very large
+          const activeContextHistory = newHistory.filter(m => !m.isHidden && !m.text.includes("BÁO CÁO HỆ THỐNG"));
+          let visibleChars = 0;
+          for (const m of activeContextHistory) {
+              if (m.role === 'model') visibleChars += m.swipes?.[m.swipeIndex || 0]?.length || m.text.length;
+              else visibleChars += m.text.length;
+          }
+          
+          const maxOutputTokens = settings.maxOutputTokens || 6144; // Estimated context windows
+          // ~ 4 chars per token. So maxOutputTokens * 4 is char limit. Trigger sumamrizer at 75% of context window OR 30 active turns
+          const thresholdChars = maxOutputTokens * 4 * 0.75;
+          const turnCountThreshold = 30;
+
+          if (visibleChars > thresholdChars || activeContextHistory.length > turnCountThreshold) {
+            console.log("[AutoSummarization] Approaching token/turn limits. Triggering background contextual shift...");
+            DynamicMemoryService.processCoreMemories(activeContextHistory, activeWorldRef.current, settings, campaignId)
+              .then((newSummary) => {
+                 if (newSummary) {
+                    console.log("[AutoSummarization] Successfully updated core memory! Hiding old messages to save context token budget.");
+                    setHistory(prev => {
+                       const modified = [...prev];
+                       
+                       // Keep only last N active messages
+                       const keepCount = 10;
+                       let activeCount = 0;
+                       for (let i = modified.length - 1; i >= 0; i--) {
+                          if (!modified[i].isHidden && modified[i].role && modified[i].role !== 'system') {
+                             activeCount++;
+                             if (activeCount > keepCount) {
+                                modified[i].isHidden = true;
+                             }
+                          }
+                       }
+                       return modified;
+                    });
+                 }
+              })
+              .catch(e => console.error("Auto summarization thread failed", e));
+          }
         }
       } else {
         syncWorldState(

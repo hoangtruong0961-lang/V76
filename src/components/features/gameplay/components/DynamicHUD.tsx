@@ -37,9 +37,9 @@ export const DynamicHUD: React.FC<DynamicHUDProps> = ({ worldData, gameTime, tur
     const [visibleWidgets, setVisibleWidgets] = useState<string[]>(() => {
         try {
             const saved = dbService.getKeyValueSync('ark_hud_visible_widgets');
-            return saved ? saved : ['env', 'stats', 'quest', 'economy', 'effects'];
+            return saved ? saved : ['env', 'stats', 'relations', 'quest', 'economy', 'effects'];
         } catch {
-            return ['env', 'stats', 'quest', 'economy', 'effects'];
+            return ['env', 'stats', 'relations', 'quest', 'economy', 'effects'];
         }
     });
 
@@ -580,6 +580,32 @@ export const DynamicHUD: React.FC<DynamicHUDProps> = ({ worldData, gameTime, tur
                                 <span>{activeEffects.length} Mẫn hiệu</span>
                             </div>
                         )}
+
+                        {/* 6. Active Social Link */}
+                        {visibleWidgets.includes('relations') && recentNpcs.length > 0 && relations.length > 0 && (() => {
+                            const activeRel = relations.find(r => 
+                                r.name.toLowerCase().includes(recentNpcs[0].name.toLowerCase()) || 
+                                recentNpcs[0].name.toLowerCase().includes(r.name.toLowerCase())
+                            );
+                            if (!activeRel) return null;
+                            const affinityRatio = getProgressRatio(activeRel.affinity);
+                            return (
+                                <div className="hidden md:flex flex-col gap-1 w-24 md:w-32 shrink-0 border-none px-2.5 py-1.5 rounded-xl justify-center animate-fadeIn" style={{ backgroundColor: s.badgeBg }}>
+                                    <div className="flex justify-between text-[8px] font-mono font-black py-0.5 leading-none" style={{ color: s.textMuted }}>
+                                        <span className="truncate pr-2">{activeRel.name}</span>
+                                        <span className="text-pink-500 dark:text-pink-400 font-bold whitespace-nowrap">💖 {activeRel.affinity}</span>
+                                    </div>
+                                    {affinityRatio !== -1 && (
+                                        <div className="h-1 bg-black/10 dark:bg-slate-900 rounded-full overflow-hidden shadow-inner">
+                                            <div 
+                                                className="h-full bg-gradient-to-r from-rose-500 to-pink-400 rounded-full transition-all duration-500" 
+                                                style={{ width: `${Math.max(0, Math.min(100, affinityRatio))}%` }}
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })()}
 
                         {/* --- RENDER USER-PERSISTED CUSTOM WIDGETS --- */}
                         {customWidgets.map(widget => {

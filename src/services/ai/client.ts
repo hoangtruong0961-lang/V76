@@ -238,9 +238,17 @@ export const getAiClient = (settings?: AppSettings, forceDirect: boolean = false
   // because most third-party proxies for non-Gemini models use OpenAI format.
   const isKimi = activeProxy?.url?.includes('moonshot') || activeProxy?.url?.includes('kimi') || modelToTest.includes('kimi');
   const isOpenAIModel = modelToTest.includes('gpt') || modelToTest.includes('claude') || modelToTest.includes('kimi') || modelToTest.includes('moonshot') || modelToTest.includes('deepseek') || modelToTest.includes('qwen') || modelToTest.includes('grok');
+  const isOpenAILikeProxy = !!(
+    activeProxy?.url?.includes('api.openai.com') ||
+    activeProxy?.url?.includes('chat/completions') ||
+    activeProxy?.url?.includes('ggchan.dev') ||
+    activeProxy?.url?.includes('openrouter.ai')
+  );
   
   const effectiveType = (useProxy && activeProxy) 
-    ? (activeProxy.type || ((isOpenAIModel || isKimi || !isGeminiModel) ? 'openai' : 'google')) 
+    ? (activeProxy.type === 'openai' ? 'openai' : 
+       activeProxy.type === 'google' && !isOpenAILikeProxy && isGeminiModel ? 'google' :
+       (isOpenAIModel || isKimi || !isGeminiModel || isOpenAILikeProxy) ? 'openai' : 'google')
     : 'google';
 
   if (useProxy && activeProxy && (effectiveType === 'openai' || effectiveType === 'openrouter')) {

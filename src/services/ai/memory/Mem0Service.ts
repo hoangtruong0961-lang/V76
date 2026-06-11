@@ -248,9 +248,18 @@ export const Mem0Service = {
         isLocked: !!m.isLocked
       }));
 
-      const modelName = settings.aiMode === "hybrid" && settings.backgroundAiModel 
+      let activeProxy = settings.proxies?.find(
+        (p) => p.id === settings.activeProxyId,
+      );
+      if (!activeProxy && (settings.proxyEnabled || settings.proxyUrl)) {
+        activeProxy = {
+          model: settings.proxyModel || "",
+        } as any;
+      }
+
+      const modelName = (settings.aiMode === "hybrid" && settings.backgroundAiModel && !activeProxy?.model)
         ? settings.backgroundAiModel 
-        : (settings.aiModel || "gemini-3.1-pro-preview");
+        : (activeProxy?.model || settings.aiModel || "gemini-3.1-pro-preview");
 
       const prompt = `Bạn là ARK Mem0 Engine - Bộ lọc và lưu lại bộ nhớ cá nhân hóa sâu sắc của thế giới game RPG dã sử trinh thám.
 

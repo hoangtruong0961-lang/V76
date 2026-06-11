@@ -168,8 +168,21 @@ ${textToSummarize}
 
 Yêu cầu: Chỉ trả về đoạn tóm tắt vắn tắt bằng tiếng Việt, không kèm định dạng hay lời giải thích nào khác.`;
 
+    let activeProxy = settings.proxies?.find(
+      (p) => p.id === settings.activeProxyId,
+    );
+    if (!activeProxy && (settings.proxyEnabled || settings.proxyUrl)) {
+      activeProxy = {
+        model: settings.proxyModel || "",
+      } as any;
+    }
+
+    const modelToUseBg = (settings.aiMode === "hybrid" && settings.backgroundAiModel && !activeProxy?.model)
+      ? settings.backgroundAiModel
+      : (activeProxy?.model || settings.aiModel || "gemini-2.5-flash");
+
     const response = await aiClient.models.generateContent({
-      model: settings.aiMode === 'hybrid' && settings.backgroundAiModel ? settings.backgroundAiModel : "gemini-2.5-flash",
+      model: modelToUseBg,
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       config: {
         temperature: 0.2,
@@ -343,8 +356,12 @@ export const gameplayAiService = {
           };
         }
 
+        const modelToUseBg = (settings.aiMode === "hybrid" && settings.backgroundAiModel && !activeProxy?.model)
+          ? settings.backgroundAiModel
+          : (activeProxy?.model || settings.aiModel || "gemini-3.5-flash");
+
         backgroundInsightsPromise = aiClient.models.generateContent({
-          model: settings.backgroundAiModel,
+          model: modelToUseBg,
           contents: [{ role: "user", parts: [{ text: prompt }] }],
           config: {
             temperature: 0.2,
@@ -788,17 +805,22 @@ export const gameplayAiService = {
 
       // INJECT REINFORCEMENT INSTRUCTION HERE (CONTEXT DRIFT FIX)
       const reinforcement = getReinforcementInstruction(currentTurn);
-      let fullInput = `<user_input>${cleanedInput}</user_input>${reinforcement}`;
-
-      // Append postHistoryUser injects correctly
+      
+      let extraUserInject = reinforcement;
       if (postHistoryUser && postHistoryUser.length > 0) {
-        fullInput += `\n\n${postHistoryUser}`;
+        extraUserInject += `\n\n${postHistoryUser}`;
       }
 
-      contents.push({
-        role: "user",
-        parts: [{ text: fullInput }],
-      });
+      // Merge with the last message if it's a user message, otherwise push
+      const lastContent = contents[contents.length - 1];
+      if (lastContent && lastContent.role === "user") {
+        lastContent.parts[0].text += extraUserInject;
+      } else {
+        contents.push({
+          role: "user",
+          parts: [{ text: `<user_input>${cleanedInput}</user_input>${extraUserInject}` }],
+        });
+      }
 
       // 4. Assistant Prefill Logic
       const isNativeThinkingActive = (isGeminiThinkingModel && thinkingBudget >= 1024) || (isOtherThinkingModel && thinkingBudget > 0);
@@ -1105,15 +1127,28 @@ export const gameplayAiService = {
     }
   },
 
-  async auditLsrUpdates(
+  auditLsrUpdates: async (
     userInput: string,
     narrativeText: string,
     currentLsrData: Record<string, Record<string, string>[]>,
     settings: AppSettings,
     turnCount?: number,
-  ): Promise<Record<string, Record<string, string>[]>> {
+  ): Promise<Record<string, Record<string, string>[]>> => {
     const aiClient = getAiClient(settings);
     if (!aiClient) return currentLsrData;
+
+    let activeProxy = settings.proxies?.find(
+      (p) => p.id === settings.activeProxyId,
+    );
+    if (!activeProxy && (settings.proxyEnabled || settings.proxyUrl)) {
+      activeProxy = {
+        model: settings.proxyModel || "",
+      } as any;
+    }
+
+    const modelToUse = (settings.aiMode === "hybrid" && settings.backgroundAiModel && !activeProxy?.model)
+      ? settings.backgroundAiModel
+      : (activeProxy?.model || settings.aiModel || "gemini-3.5-flash");
 
     try {
       const lsrTables = LsrParser.parseDefinitions();
@@ -1167,7 +1202,7 @@ Rules for updates:
 Be extremely accurate. ONLY output updates when there is a true change/consequence. If no changes are needed, return an empty updates list.`;
 
       const response = await aiClient.models.generateContent({
-        model: settings.backgroundAiModel || "gemini-3.5-flash",
+        model: modelToUse,
         contents: prompt,
         config: {
           temperature: 0.1,
@@ -1709,17 +1744,22 @@ Be extremely accurate. ONLY output updates when there is a true change/consequen
 
       // INJECT REINFORCEMENT INSTRUCTION HERE (CONTEXT DRIFT FIX)
       const reinforcement = getReinforcementInstruction(currentTurn);
-      let fullInput = `<user_input>${cleanedInput}</user_input>${reinforcement}`;
-
-      // Append postHistoryUser injects correctly
+      
+      let extraUserInject = reinforcement;
       if (postHistoryUser && postHistoryUser.length > 0) {
-        fullInput += `\n\n${postHistoryUser}`;
+        extraUserInject += `\n\n${postHistoryUser}`;
       }
 
-      contents.push({
-        role: "user",
-        parts: [{ text: fullInput }],
-      });
+      // Merge with the last message if it's a user message, otherwise push
+      const lastContent = contents[contents.length - 1];
+      if (lastContent && lastContent.role === "user") {
+        lastContent.parts[0].text += extraUserInject;
+      } else {
+        contents.push({
+          role: "user",
+          parts: [{ text: `<user_input>${cleanedInput}</user_input>${extraUserInject}` }],
+        });
+      }
 
       // Handle Prefill - FORCE THINKING
       const isNativeThinkingActive = (isGeminiThinkingModel && thinkingBudget >= 1024) || (isOtherThinkingModel && thinkingBudget > 0);

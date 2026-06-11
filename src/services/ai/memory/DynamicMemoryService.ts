@@ -159,8 +159,21 @@ ${historyText}
 
 Chỉ trả về phần chữ tóm tắt, không thêm lời bình hay mô tả dư thừa.`;
 
+      let activeProxy = settings.proxies?.find(
+        (p) => p.id === settings.activeProxyId,
+      );
+      if (!activeProxy && (settings.proxyEnabled || settings.proxyUrl)) {
+        activeProxy = {
+          model: settings.proxyModel || "",
+        } as any;
+      }
+
+      const modelToUseBg = (settings.aiMode === "hybrid" && settings.backgroundAiModel && !activeProxy?.model)
+        ? settings.backgroundAiModel
+        : (activeProxy?.model || settings.aiModel || "gemini-3.1-pro-preview");
+
       const response = await aiClient.models.generateContent({
-        model: settings.aiMode === 'hybrid' && settings.backgroundAiModel ? settings.backgroundAiModel : (settings.aiModel || "gemini-3.1-pro-preview"),
+        model: modelToUseBg,
         contents: [{ role: "user", parts: [{ text: prompt }] }],
         config: {
           temperature: 0.3,
@@ -284,8 +297,21 @@ Nếu CÓ: Trả về JSON { "hasDrift": true, "reason": "(giải thích ngắn 
 Nếu KHÔNG: Trả về JSON { "hasDrift": false, "reason": "" }
 Chỉ trả về JSON hợp lệ.`;
 
+      let activeProxy = settings.proxies?.find(
+        (p) => p.id === settings.activeProxyId,
+      );
+      if (!activeProxy && (settings.proxyEnabled || settings.proxyUrl)) {
+        activeProxy = {
+          model: settings.proxyModel || "",
+        } as any;
+      }
+
+      const modelToUseBg = (settings.aiMode === "hybrid" && settings.backgroundAiModel && !activeProxy?.model)
+        ? settings.backgroundAiModel
+        : (activeProxy?.model || settings.aiModel || "gemini-2.5-flash");
+
       const response = await aiClient.models.generateContent({
-        model: settings.aiMode === 'hybrid' && settings.backgroundAiModel ? settings.backgroundAiModel : "gemini-2.5-flash",
+        model: modelToUseBg,
         contents: [{ role: "user", parts: [{ text: prompt }] }],
         config: {
           temperature: 0.1,

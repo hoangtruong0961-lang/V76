@@ -382,6 +382,96 @@ Chỉ trả về JSON hợp lệ.`;
     }
   },
 
+  async autoUpdateBaseProfileData(
+    history: ChatMessage[],
+    activeWorld: WorldData,
+    settings: AppSettings,
+  ): Promise<{ entities?: Entity[], player?: Partial<CharacterSheet> } | null> {
+    try {
+      const recentHistory = history.slice(-4).map(m => `[${m.role}] ${m.text}`).join("\n");
+      const playerApp = activeWorld.player?.appearance || "";
+      const entityApps = (activeWorld.entities || []).map(e => ({ id: e.id, name: e.name, description: e.description || "" }));
+
+      const prompt = `Phân tích đoạn chat gần đây và cập nhật ngoại hình/trang bị của nhân vật nếu có thay đổi (chẳng hạn như thay quần áo, bị thương nặng, nhận trang bị mới).
+Thay đổi chỉ tính nếu đó là sự kiện hiển nhiên, có giá trị lâu dài.
+Nội dung chat gần đây:
+${recentHistory}
+
+Tình trạng ngoại hình/trang phục HIỆN TẠI:
+- User (Người chơi): ${playerApp}
+${entityApps.map(e => `- [${e.name}] (${e.id}): ${e.description}`).join("\n")}
+
+Nếu phát hiện có sự thay đổi ngoại hình, quần áo hoặc trang bị CỐT LÕI đang mặc/mang, hãy trả về JSON:
+{
+  "hasChanges": true,
+  "playerUpdate": "Cập nhật lại câu mô tả ngoại hình/trang phục người chơi...", // Hoặc null nếu không đổi
+  "entitiesUpdate": [
+    { "id": "...", "description": "Cập nhật lại câu mô tả ngoại hình/trang phục của NPC này..." }
+  ]
+}
+
+- KHÔNG tự bịa ra nếu chat không đề cập. Nếu không có ai thay quần áo hoặc thay đổi hình thể, trả về { "hasChanges": false }.
+- Chỉ trả về chuỗi JSON hợp lệ.`;
+
+      let activeProxy = settings.proxies?.find(
+        (p) => p.id === settings.activeProxyId,
+      );
+      if (!activeProxy && (settings.proxyEnabled || settings.proxyUrl)) {
+        activeProxy = {
+          model: settings.proxyModel || "",
+        } as any;
+      }
+      const modelToUseBg = (settings.aiMode === "hybrid" && settings.backgroundAiModel && !activeProxy?.model)
+        ? settings.backgroundAiModel
+        : (activeProxy?.model || settings.aiModel || "gemini-3.5-flash");
+
+      const aiClient = getAiClient(settings);
+      const response = await aiClient.models.generateContent({
+        model: modelToUseBg,
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        config: {
+          temperature: 0.1,
+          responseMimeType: "application/json",
+        },
+      });
+
+      const text = response.text?.trim() || "";
+      if (!text) return null;
+      
+      const parsed = JSON.parse(text);
+      if (!parsed.hasChanges) return null;
+
+      const result: { entities?: Entity[], player?: Partial<CharacterSheet> } = {};
+
+      if (parsed.playerUpdate) {
+        result.player = {
+          ...activeWorld.player,
+          appearance: parsed.playerUpdate
+        };
+      }
+
+      if (parsed.entitiesUpdate && Array.isArray(parsed.entitiesUpdate)) {
+        const newEntities = [...activeWorld.entities];
+        let entityChanged = false;
+        for (const update of parsed.entitiesUpdate) {
+          const idx = newEntities.findIndex(e => e.id === update.id);
+          if (idx !== -1 && update.description) {
+            newEntities[idx] = { ...newEntities[idx], description: update.description };
+            entityChanged = true;
+          }
+        }
+        if (entityChanged) {
+          result.entities = newEntities;
+        }
+      }
+
+      return result;
+    } catch (e) {
+      console.warn("[DynamicMemoryService] autoUpdateBaseProfileData failed:", e);
+      return null;
+    }
+  },
+
   /**
    * Analyzes state health and optionally runs a healing MCE cycle if background steps had failed
    */

@@ -262,6 +262,8 @@ export const useGameplayCore = ({ onNavigate, activeWorld, onUpdateWorld }: Navi
       currentTime?: GameTime,
       currentLsrData?: Record<string, unknown[]>,
       currentSummary?: string,
+      updatedEntities?: Entity[],
+      updatedPlayer?: Partial<CharacterSheet>,
     ) => {
       if (!isReadyRef.current) return;
       if (onUpdateWorld) {
@@ -269,6 +271,8 @@ export const useGameplayCore = ({ onNavigate, activeWorld, onUpdateWorld }: Navi
           onUpdateWorld({
             summary: currentSummary || activeWorldSummaryRef.current,
             lsrData: currentLsrData || lsrRuntimeDataRef.current,
+            entities: updatedEntities || activeWorldRef.current?.entities,
+            player: (updatedPlayer || activeWorldRef.current?.player) as any,
             config: {
               ...activeWorldRef.current?.config,
               rules: dynamicRulesRef.current,

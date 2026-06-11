@@ -692,6 +692,7 @@ User is roleplaying the main character named "${playerProfile.name}".
 - All thoughts and actions of "${playerProfile.name}" are controlled by the User or guided by the AI from the User's perspective.
 - Absolutely DO NOT create a separate "User" character.
 - Narrative perspective: 3rd person (following "${playerProfile.name}") or 2nd person (You - if config requires).
+- CRITICAL: The data in [Main Character Profile <user>] represents the ABSOLUTE LATEST STATE of the user's character. If the chat history or starting scenario contradicts this profile (e.g. they changed clothes, updated equipment, or changed stats), you MUST prioritize the Profile and seamlessly adapt the narrative to reflect these new updated traits without questioning it.
 </ROLEPLAY_INSTRUCTION>`,
       source: "RoleplayInstruction",
     });

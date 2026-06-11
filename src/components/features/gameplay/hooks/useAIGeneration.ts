@@ -79,6 +79,8 @@ interface AIGenerationProps {
     timeVal: GameTime,
     lsrData?: any,
     incrementalSummary?: string,
+    updatedEntities?: any[],
+    updatedPlayer?: any,
   ) => void;
   triggerAutosave: (
     historyList: ChatMessage[],
@@ -434,6 +436,28 @@ export function useAIGeneration({
             activeWorldRef.current
           ).catch((mErr) => {
             console.error("[Mem0] Background updater failed:", mErr);
+          });
+
+          // Run Base Profile (Apperance/Inventory) updater asynchronously
+          DynamicMemoryService.autoUpdateBaseProfileData(
+            newHistory,
+            activeWorldRef.current,
+            settings
+          ).then((updates) => {
+            if (updates) {
+              console.log("[BaseProfileUpdater] Cập nhật lại hình thể/trang bị gốc thành công:", updates);
+              syncWorldState(
+                historyRef.current,
+                turnCountRef.current,
+                gameTimeRef.current,
+                lsrRuntimeDataRef.current,
+                activeWorldRef.current?.summary,
+                updates.entities,
+                updates.player
+              );
+            }
+          }).catch((e) => {
+             console.error("[BaseProfileUpdater] Thất bại:", e);
           });
 
           // BACKGROUND AUTO-SUMMARIZATION LOGIC (Token Conservation)
